@@ -58,6 +58,7 @@ button {
   <p id="question"></p>
   <div id="tables"></div>
   <div id="options"></div>
+  <button id="prevBtn" onclick="prevQuestion()">이전</button>
   <button id="nextBtn" onclick="nextQuestion()" disabled>다음</button>
 </div>
 
@@ -292,6 +293,26 @@ function loadQuestion(){
 
   tables.innerHTML="";
   options.innerHTML="";
+  if(q.tables){
+  q.tables.forEach(t=>{
+    let tableHTML = "";
+
+    // 🔥 표 제목 추가 (A지역 / B지역)
+    if(t.title){
+      tableHTML += "<div style='margin-top:10px;font-weight:bold'>" + t.title + "</div>";
+    }
+
+    tableHTML += "<table class='table'>";
+
+    t.data.forEach(r=>{
+      tableHTML += "<tr>" + r.map(c=>"<td>"+c+"</td>").join("") + "</tr>";
+    });
+
+    tableHTML += "</table>";
+
+    tables.innerHTML += tableHTML;
+  });
+}
 
   if(q.options){
     q.options.forEach((opt,i)=>{
