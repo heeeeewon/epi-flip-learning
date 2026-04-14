@@ -20,7 +20,8 @@ body { font-family:sans-serif; background:#f1f5f9; padding:20px; }
   border:1px solid #ccc;
   border-radius:8px;
   cursor:pointer;
-  color:black;   /* 🔥 글씨 검정 */
+  color:black;
+  background:white;
 }
 
 .option:hover { background:#e0f2fe; }
@@ -29,7 +30,7 @@ body { font-family:sans-serif; background:#f1f5f9; padding:20px; }
 .wrong { background:#fecaca; }
 .selected { background:#dbeafe; }
 
-input { width:100%; padding:10px; margin-top:10px; }
+input { width:100%; padding:10px; margin-top:10px; box-sizing:border-box; }
 
 button {
   margin-top:20px;
@@ -37,6 +38,13 @@ button {
   background:#2563eb;
   color:white;
   border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+button:disabled {
+  background:#94a3b8;
+  cursor:not-allowed;
 }
 
 .feedback { margin-top:10px; font-weight:bold; }
@@ -46,6 +54,13 @@ button {
   padding:10px;
   margin-bottom:10px;
   border-radius:8px;
+  border:1px solid #e2e8f0;
+  white-space:pre-line;
+}
+
+.button-row {
+  display:flex;
+  gap:10px;
 }
 </style>
 </head>
@@ -58,8 +73,10 @@ button {
   <p id="question"></p>
   <div id="tables"></div>
   <div id="options"></div>
-  <button id="prevBtn" onclick="prevQuestion()">이전</button>
-  <button id="nextBtn" onclick="nextQuestion()" disabled>다음</button>
+  <div class="button-row">
+    <button id="prevBtn" onclick="prevQuestion()">이전</button>
+    <button id="nextBtn" onclick="nextQuestion()" disabled>다음</button>
+  </div>
 </div>
 
 <script>
@@ -168,7 +185,7 @@ const questions = [
     {text:"예방접종",correct:true},
     {text:"조기검진",correct:false},
     {text:"재활치료",correct:false},
-    {text:"합병증 관리",correct:false},
+    {text:"합병증 관리",correct:false}
   ]
 },
 
@@ -228,14 +245,15 @@ const questions = [
     {text: "임상시험", correct: false},
     {text: "환자-대조군 연구", correct: false}
   ]
-
 },
 
+/* 표준화 */
 {
   title:"문제 13",
   text:"아래의 표는 두 지역의 연령별 사망자료이다.\n(a) 두 지역의 보통 사망률(조사망률)을 계산하고 비교하라.\n(b) 표준화 사망률을 계산하여 비교하라. 이때 표준 인구는 두 지역의 인구를 합친인구로 한다",
   tables:[
     {
+      title:"A지역",
       data:[
         ["연령","사망자수","인구수"],
         ["0-54","60","7500"],
@@ -245,6 +263,7 @@ const questions = [
       ]
     },
     {
+      title:"B지역",
       data:[
         ["연령","사망자수","인구수"],
         ["0-54","11","1100"],
@@ -269,62 +288,59 @@ const questions = [
   ]
 }
 
-
-
 ];
 
-let current=0;
-let checked=false;
+let current = 0;
+let checked = false;
 
 function loadQuestion(){
-  checked=false;
-  nextBtn.disabled=true;
+  checked = false;
+  nextBtn.disabled = true;
+  prevBtn.disabled = (current === 0);
 
-  const q=questions[current];
+  const q = questions[current];
 
-  let parent=null;
+  let parent = null;
   if(q.title.includes("-")){
-    parent=questions.find(x=>x.title===q.title.split("-")[0]);
+    parent = questions.find(x => x.title === q.title.split("-")[0]);
   }
 
   caseBox.innerText = parent ? parent.text : "";
-  title.innerText=q.title;
-  question.innerText=q.text;
+  title.innerText = q.title;
+  question.innerText = q.text;
 
-  tables.innerHTML="";
-  options.innerHTML="";
+  tables.innerHTML = "";
+  options.innerHTML = "";
+
   if(q.tables){
-  q.tables.forEach(t=>{
-    let tableHTML = "";
+    q.tables.forEach(t=>{
+      let tableHTML = "";
 
-    // 🔥 표 제목 추가 (A지역 / B지역)
-    if(t.title){
-      tableHTML += "<div style='margin-top:10px;font-weight:bold'>" + t.title + "</div>";
-    }
+      if(t.title){
+        tableHTML += "<div style='margin-top:10px;font-weight:bold'>" + t.title + "</div>";
+      }
 
-    tableHTML += "<table class='table'>";
+      tableHTML += "<table class='table'>";
+      t.data.forEach(r=>{
+        tableHTML += "<tr>" + r.map(c=>"<td>"+c+"</td>").join("") + "</tr>";
+      });
+      tableHTML += "</table>";
 
-    t.data.forEach(r=>{
-      tableHTML += "<tr>" + r.map(c=>"<td>"+c+"</td>").join("") + "</tr>";
+      tables.innerHTML += tableHTML;
     });
-
-    tableHTML += "</table>";
-
-    tables.innerHTML += tableHTML;
-  });
-}
+  }
 
   if(q.options){
     q.options.forEach((opt,i)=>{
-      const btn=document.createElement("button");
-      btn.className="option";
-      btn.innerText=opt.text;
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.innerText = opt.text;
 
-      btn.onclick=()=>{
+      btn.onclick = ()=>{
         if(!q.multi){
           if(checked) return;
-          checked=true;
-          nextBtn.disabled=false;
+          checked = true;
+          nextBtn.disabled = false;
 
           document.querySelectorAll(".option").forEach((b,j)=>{
             if(q.options[j].correct) b.classList.add("correct");
@@ -332,8 +348,9 @@ function loadQuestion(){
           });
 
         } else {
+          if(checked) return;
           btn.classList.toggle("selected");
-          nextBtn.disabled=false;
+          nextBtn.disabled = false;
         }
       };
 
@@ -342,62 +359,71 @@ function loadQuestion(){
   }
 
   if(q.input){
-    const input=document.createElement("input");
-    input.oninput=()=> nextBtn.disabled=false;
+    const input = document.createElement("input");
+    input.oninput = ()=> nextBtn.disabled = false;
     options.appendChild(input);
   }
 
   if(!q.options && !q.input){
-    nextBtn.disabled=false;
+    nextBtn.disabled = false;
   }
 }
 
 function nextQuestion(){
-  const q=questions[current];
+  const q = questions[current];
 
   if(q.input){
     if(!checked){
-      const val=document.querySelector("input").value.trim();
-      const msg=document.createElement("div");
+      const val = document.querySelector("input").value.trim();
+      const msg = document.createElement("div");
 
       msg.innerText = (val===q.answer) ? "정답" : "오답 (정답:"+q.answer+")";
-      msg.className="feedback";
+      msg.className = "feedback";
       msg.style.color = (val===q.answer) ? "green" : "red";
 
       options.appendChild(msg);
-      checked=true;
+      checked = true;
       return;
     }
   }
 
   if(q.multi){
     if(!checked){
-      let all=true;
+      let all = true;
       document.querySelectorAll(".option").forEach((b,i)=>{
         if(q.options[i].correct) b.classList.add("correct");
         if(b.classList.contains("selected") && !q.options[i].correct){
           b.classList.add("wrong");
-          all=false;
+          all = false;
         }
         if(!b.classList.contains("selected") && q.options[i].correct){
-          all=false;
+          all = false;
         }
       });
 
-      const msg=document.createElement("div");
-      msg.innerText=all?"정답":"오답";
-      msg.className="feedback";
+      const msg = document.createElement("div");
+      msg.innerText = all ? "정답" : "오답";
+      msg.className = "feedback";
+      msg.style.color = all ? "green" : "red";
       options.appendChild(msg);
 
-      checked=true;
+      checked = true;
       return;
     }
   }
 
   current++;
-  if(current>=questions.length){
-    document.body.innerHTML="<h2>완료!</h2>";
-  } else loadQuestion();
+  if(current >= questions.length){
+    document.body.innerHTML = "<h2>완료!</h2>";
+  } else {
+    loadQuestion();
+  }
+}
+
+function prevQuestion(){
+  if(current === 0) return;
+  current--;
+  loadQuestion();
 }
 
 loadQuestion();
