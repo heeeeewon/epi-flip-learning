@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>중간고사 대비 플립 러닝</title>
+
+<style>
+body { font-family:sans-serif; background:#f1f5f9; padding:20px; }
+.container { max-width:800px; margin:auto; background:white; padding:25px; border-radius:12px; }
+
+.table { width:100%; border-collapse:collapse; margin:10px 0; }
+.table td { border:1px solid #ddd; padding:8px; text-align:center; }
+
+.option {
+  display:block;
+  width:100%;
+  margin-top:10px;
+  padding:12px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  cursor:pointer;
+  color:black;
+  background:white;
+}
+
+.option:hover { background:#e0f2fe; }
+
+.correct { background:#bbf7d0; }
+.wrong { background:#fecaca; }
+.selected { background:#dbeafe; }
+
+input { width:100%; padding:10px; margin-top:10px; box-sizing:border-box; }
+
+button {
+  margin-top:20px;
+  padding:10px;
+  background:#2563eb;
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+button:disabled {
+  background:#94a3b8;
+  cursor:not-allowed;
+}
+
+.feedback { margin-top:10px; font-weight:bold; }
+
+.case-box {
+  background:#f8fafc;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #e2e8f0;
+  white-space:pre-line;
+}
+
+.button-row {
+  display:flex;
+  gap:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2 id="title"></h2>
+  <div id="caseBox"></div>
+  <p id="question"></p>
+  <div id="tables"></div>
+  <div id="options"></div>
+  <div class="button-row">
+    <button id="prevBtn" onclick="prevQuestion()">이전</button>
+    <button id="nextBtn" onclick="nextQuestion()" disabled>다음</button>
+  </div>
+</div>
+
+<script>
+
+const questions = [
+
+/* 풍토병 */
+{
+  title:"문제 1",
+  text:"다음 중 풍토병(endemic)의 의미는?",
+  options:[
+    {text:"예상했던 기대치보다 크게 발생",correct:false},
+    {text:"인구집단에서 일상적으로 나타남",correct:true},
+    {text:"여러 국가에서 동시에 발생",correct:false},
+    {text:"계절적으로 발생",correct:false},
+    {text:"동물에서 유행",correct:false}
+  ]
+},
+
+/* 발병률 */
+{
+  title:"문제 2",
+  text:"첫번째 표는 연쇄상구균에 오염되는 것으로 추정되는 2가지 음식을 섭취한 사람의 수를 나타내며, 두번째 표는 첫번째 표의 음식을 섭취한 사람 중 질병(장염)에 걸린 사람의 수를 나타낸다. 달걀샐러드와 참치를 함께 섭취한 사람들의 발병률은?",
+  tables:[
+    {
+      title:"섭취 인원",
+      data:[
+        ["", "참치 O", "참치 X"],
+        ["샐러드 O", "75", "100"],
+        ["샐러드 X", "200", "50"]
+      ]
+    },
+    {
+      title:"환자 수",
+      data:[
+        ["", "참치 O", "참치 X"],
+        ["샐러드 O", "60", "75"],
+        ["샐러드 X", "70", "15"]
+      ]
+    }
+  ],
+  options:[
+    {text:"60/75",correct:true},
+    {text:"70/200",correct:false},
+    {text:"60/135",correct:false},
+    {text:"60/275",correct:false}
+  ]
+},
+
+/* 원인 */
+{
+  title:"문제 3",
+  text:"감염과 가장 관련된 음식은?",
+  options:[
+    {text:"참치",correct:false},
+    {text:"달걀샐러드",correct:true},
+    {text:"둘 다",correct:false},
+    {text:"둘 다 아님",correct:false}
+  ]
+},
+
+/* RR */
+{
+  title:"문제 4",
+  text:"발병률이 노출군에서 77%와 비노출군에서 34%일 때 상대위험도는?",
+  options:[
+    {text:"0.43",correct:false},
+    {text:"1.00",correct:false},
+    {text:"1.43",correct:false},
+    {text:"2.26",correct:true},
+    {text:"3.11",correct:false}
+  ]
+},
+
+/* RD */
+{
+  title:"문제 5",
+  text:"발병률이 노출군에서 77%와 비노출군에서 34%일 때 절대위험차는?",
+  options:[
+    {text:"0.43",correct:true},
+    {text:"1.00",correct:false},
+    {text:"0.77",correct:false},
+    {text:"2.26",correct:false},
+    {text:"1.43",correct:false}
+  ]
+},
+
+/* vector */
+{
+  title:"문제 6",
+  text:"다음 중 매개체(vector)에 해당하는 것을 모두 고르시오",
+  multi:true,
+  options:[
+    {text:"모기",correct:true},
+    {text:"공기",correct:false},
+    {text:"사람",correct:false},
+    {text:"진드기",correct:true}
+  ]
+},
+
+/* 예방 */
+{
+  title:"문제 7",
+  text:"다음 중 1차 예방에 해당하는 것은?",
+  options:[
+    {text:"예방접종",correct:true},
+    {text:"조기검진",correct:false},
+    {text:"재활치료",correct:false},
+    {text:"합병증 관리",correct:false}
+  ]
+},
+
+{
+  title:"문제 8",
+  text:"다음 중 2차 예방에 해당하는 것은?",
+  options: [
+    {text: "금연 교육", correct: false},
+    {text: "건강검진을 통한 조기 발견", correct: true},
+    {text: "재활 프로그램", correct: false},
+    {text: "장애 관리", correct: false}
+  ]
+},
+
+{
+  title:"문제 9",
+  text:"다음 중 3차 예방에 해당하는 것은?",
+  options: [
+    {text: "예방접종", correct: false},
+    {text: "조기 진단", correct: false},
+    {text: "재활 치료 및 기능 회복", correct: true},
+    {text: "위험요인 제거", correct: false}
+  ]
+},
+
+{
+  title:"문제 11",
+  text:"다음 중 분율(proportion)에 해당하는 것은?",
+  options: [
+    {text: "남자 수 / 여자 수", correct: false},
+    {text: "환자 수 / 전체 인구 수", correct: true},
+    {text: "사망자 수 / 생존자 수", correct: false},
+    {text: "병원 수 / 지역 수", correct: false}
+  ]
+},
+
+{
+  title:"문제 12",
+  text:"다음 중 치명률에 대한 설명으로 옳은 것은?",
+  options: [
+    {text: "전체 인구 중 사망", correct: false},
+    {text: "노출자 중 발병", correct: false},
+    {text: "환자 중 사망", correct: false},
+    {text: "인구 중 환자", correct: false}
+  ]
+},
+
+
+{
+  title:"문제 13",
+  text:"의사 집단과 일반인을 대상으로 특정 약물 복용과 질병의 연관성을 조사하였다. 이 과정에서 의사 집단에서는 약물 복용 여부와 종류가 상세히 보고된 반면, 일반인 집단에서는 상대적으로 간단하게 조사되었다.\n그 결과 의사 집단에서 약물 복용과 질병 간의 연관성이 더 강하게 나타났다.\n다음 중 이 연관성은 어디에서 기인되었을 가능성이 가장 높은가?",
+  options: [
+    {text: "선택 바이어스", correct: false},
+    {text: "정보 바이어스", correct: true},
+    {text: "교란(confounding)", correct: false},
+    {text: "무작위 오류", correct: false}
+  ]
+},
+
+
+
+/* 진단검사 */
+{
+  title:"문제 14",
+  text:"유방암으로 진단된 2,500명의 여성과 특성을 맞추어 뽑은 대조군 2,500명을 대상으로 유방암에 대한 생체조직 검사를 실시한 결과 환자군에서 1,800명, 대조군에서 800명이 양성이었고, 나머지는 생체조직 검사법에서 음성으로 나타났다"
+},
+
+{ title:"문제 10-1", text:"민감도", input:true, answer:"72"},
+{ title:"문제 10-2", text:"특이도", input:true, answer:"68"},
+{ title:"문제 10-3", text:"양성예측도", input:true, answer:"69.2"},
+
+/* 환자-대조군 */
+{
+  title:"문제 15",
+  text:"다음 중 환자-대조군 연구 특징이 아닌 것은?",
+  options: [
+    {text: "코호트 연구에 비해 비용이 적게 든다", correct: false},
+    {text: "질병이 있는 사람들과 질병이 없는 사람들을 비교한다", correct: false},
+    {text: "발생률을 직접 계산할 수 있다", correct: true},
+    {text: "과거의 노출여부 평가 시 바이어스가 생길 수 있다", correct: false},
+    {text: "환자군을 정의하기 어렵다", correct: false}
+  ]
+},
+
+/* 코호트 */
+{
+  title:"문제 16",
+  text:"2000년 포천시에서는 3,000명의 성인을 대상으로 음주 섭취량에 관하여 조사하였으며, 이들을 대상으로 2020~2025년까지 암 발생을 연구하였다. 다음 중 이 연구의 설계방법은 무엇인가?",
+  options: [
+    {text: "단면연구", correct: false},
+    {text: "전향적 코호트 연구", correct: true},
+    {text: "후향적 코호트 연구", correct: false},
+    {text: "임상시험", correct: false},
+    {text: "환자-대조군 연구", correct: false}
+  ]
+},
+
+/* 표준화 */
+{
+  title:"문제 17",
+  text:"아래의 표는 두 지역의 연령별 사망자료이다.\n(a) 두 지역의 보통 사망률(조사망률)을 계산하고 비교하라.\n(b) 표준화 사망률을 계산하여 비교하라. 이때 표준 인구는 두 지역의 인구를 합친인구로 한다",
+  tables:[
+    {
+      title:"A지역",
+      data:[
+        ["연령","사망자수","인구수"],
+        ["0-54","60","7500"],
+        ["55-69","30","1200"],
+        ["70+","260","1300"],
+        ["합계","350","10000"]
+      ]
+    },
+    {
+      title:"B지역",
+      data:[
+        ["연령","사망자수","인구수"],
+        ["0-54","11","1100"],
+        ["55-69","48","2400"],
+        ["70+","910","6000"],
+        ["합계","969","9500"]
+      ]
+    }
+  ]
+},
+
+/* SMR */
+{
+  title:"문제 18",
+  text:"기대 사망자 100명, 실제 사망자 140명일 때 표준화사망비(SMR)은?",
+  options:[
+    {text:"70",correct:false},
+    {text:"100",correct:false},
+    {text:"140",correct:true},
+    {text:"200",correct:false},
+    {text:"240",correct:false}
+  ]
+}
+
+];
+
+let current = 0;
+let checked = false;
+
+function loadQuestion(){
+  checked = false;
+  nextBtn.disabled = true;
+  prevBtn.disabled = (current === 0);
+
+  const q = questions[current];
+
+  let parent = null;
+  if(q.title.includes("-")){
+    parent = questions.find(x => x.title === q.title.split("-")[0]);
+  }
+
+  caseBox.innerText = parent ? parent.text : "";
+  title.innerText = q.title;
+  question.innerText = q.text;
+
+  tables.innerHTML = "";
+  options.innerHTML = "";
+
+  if(q.tables){
+    q.tables.forEach(t=>{
+      let tableHTML = "";
+
+      if(t.title){
+        tableHTML += "<div style='margin-top:10px;font-weight:bold'>" + t.title + "</div>";
+      }
+
+      tableHTML += "<table class='table'>";
+      t.data.forEach(r=>{
+        tableHTML += "<tr>" + r.map(c=>"<td>"+c+"</td>").join("") + "</tr>";
+      });
+      tableHTML += "</table>";
+
+      tables.innerHTML += tableHTML;
+    });
+  }
+
+  if(q.options){
+    q.options.forEach((opt,i)=>{
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.innerText = opt.text;
+
+      btn.onclick = ()=>{
+        if(!q.multi){
+          if(checked) return;
+          checked = true;
+          nextBtn.disabled = false;
+
+          document.querySelectorAll(".option").forEach((b,j)=>{
+            if(q.options[j].correct) b.classList.add("correct");
+            if(j===i && !opt.correct) b.classList.add("wrong");
+          });
+
+        } else {
+          if(checked) return;
+          btn.classList.toggle("selected");
+          nextBtn.disabled = false;
+        }
+      };
+
+      options.appendChild(btn);
+    });
+  }
+
+  if(q.input){
+    const input = document.createElement("input");
+    input.oninput = ()=> nextBtn.disabled = false;
+    options.appendChild(input);
+  }
+
+  if(!q.options && !q.input){
+    nextBtn.disabled = false;
+  }
+}
+
+function nextQuestion(){
+  const q = questions[current];
+
+  if(q.input){
+    if(!checked){
+      const val = document.querySelector("input").value.trim();
+      const msg = document.createElement("div");
+
+      msg.innerText = (val===q.answer) ? "정답" : "오답 (정답:"+q.answer+")";
+      msg.className = "feedback";
+      msg.style.color = (val===q.answer) ? "green" : "red";
+
+      options.appendChild(msg);
+      checked = true;
+      return;
+    }
+  }
+
+  if(q.multi){
+    if(!checked){
+      let all = true;
+      document.querySelectorAll(".option").forEach((b,i)=>{
+        if(q.options[i].correct) b.classList.add("correct");
+        if(b.classList.contains("selected") && !q.options[i].correct){
+          b.classList.add("wrong");
+          all = false;
+        }
+        if(!b.classList.contains("selected") && q.options[i].correct){
+          all = false;
+        }
+      });
+
+      const msg = document.createElement("div");
+      msg.innerText = all ? "정답" : "오답";
+      msg.className = "feedback";
+      msg.style.color = all ? "green" : "red";
+      options.appendChild(msg);
+
+      checked = true;
+      return;
+    }
+  }
+
+  current++;
+  if(current >= questions.length){
+    document.body.innerHTML = "<h2>끝!</h2>";
+  } else {
+    loadQuestion();
+  }
+}
+
+function prevQuestion(){
+  if(current === 0) return;
+  current--;
+  loadQuestion();
+}
+
+loadQuestion();
+
+</script>
+
+</body>
+</html>
